@@ -7,14 +7,15 @@ const paymentSchema = new mongoose.Schema(
         type: Number,
         required: true
     },
-    method: {
+   method: {
         type: String,
-        required: true
+        required: true,
+        enum:["Credit Card","Debit Card", "UPI", "Net Banking", "Cash On Delivery"], default:"Cash On Delivery"
     },
     status: {
         type: String,
         required: true,
-        default: "Pending"
+        enum: ["Pending", "Paid", "Failed"], default: "Pending",
     },
   },
   { timestamps: true }

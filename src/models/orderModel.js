@@ -22,7 +22,7 @@ const orderSchema = new mongoose.Schema({
      },
     paymentMethod: {
       payment :{ type: mongoose.Types.ObjectId, ref: "Payment", require: true}
-      
+
     },
 
 }, {

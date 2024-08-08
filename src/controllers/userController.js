@@ -1,23 +1,25 @@
 import User from "../models/userModel.js"
-import generateToken from "../utils/generateToken.js";
 import bcrypt from 'bcrypt'
+import adminToken from "../utils/adminToken.js";
 
 const ping = (req,res)=>{
-  res.json({message:"sucessfully routed user-router"});
+  res.send("sucessfully routed user-router");
 };
 
 const signup = async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body
-    // console.log(email);
+    const { email, password, confirmPassword, firstName, lastName, phone } = req.body
+    if (password !== confirmPassword) {
+      return res.status(400).json({message:"Passwords do not match"});
+    }
 
     const userExist = await User.findOne( {email} );
-    
-    
+
+
     if (userExist) {
       return res.json({message:"User is already exist"});
     }
-    
+
     const saltRounds = 10;
     const hashPassword = await bcrypt.hash(password, saltRounds);
 
@@ -25,17 +27,19 @@ const signup = async (req, res) => {
       email,
       firstName,
       lastName,
+      phone,
+      role:"user",
       hashPassword,
     });
-    
+
     const newUserCreated = await newUser.save();
 
     if (!newUserCreated) {
       return res.json({message:"user is not created"});
     }
 
-    const token = generateToken(email);
-    
+    const token = adminToken(email);
+
     res.cookie("token", token)
     res.json({message:"Signed successfully!"});
   } catch (error) {
@@ -47,7 +51,8 @@ const signup = async (req, res) => {
 const signin = async (req,res)=>{
   try{
     const {email,password} = req.body
-    // console.log(email);
+    console.log(email);
+    console.log(password);
     const user = await User.findOne({email});
     if(!user){
       return res.json({message:"User Not Found"});
@@ -56,11 +61,11 @@ const signin = async (req,res)=>{
     if(!matchPassword){
       return res.json({message:"Password Not Match"});
     }
-    const token = generateToken(email);
+    const token = adminToken(email);
     res.cookie(token);
     res.json({message:"Sucessfully Login"});
   } catch(error){
-    // console.log(error,"something Went Wrong");
+    console.log(error,"something Went Wrong");
     res.status(500).json({message:"Internal Server Error"});
   }
 };
@@ -68,49 +73,42 @@ const signin = async (req,res)=>{
 const updateUser = async (req, res) => {
     try {
       const { firstName, lastName } = req.body;
-      const {id} = req.params
+      const id = req.params.id
       const updatedUser = await User.findByIdAndUpdate(
-       { _id:id},
+        id,
         { firstName, lastName },
         { new: true }
-      );
+      ).select('-hashPassword');;
       if (!updatedUser) return res.status(404).json({ message: "User not found" });
       res.status(200).json(updatedUser);
     } catch (error) {
-      // console.log("error",error);
-      
       res.status(500).json({ message: "updation failed "});
+    }
+  };
+
+
+  const getUserById = async (req, res) => {
+    try {
+      const id = req.params.id
+      const user = await User.findById(id).select('-hashPassword');;
+      if (!user) return res.status(404).json({ message: "User not found" });
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({ message:"cant find user" });
     }
   };
 
   const getAllUsers = async (req, res) => {
     try {
-      const users = await User.find();
-      res.status(200).json([users]);
-    } catch (error) {
-      res.status(500).json({ message:"unexpeted error" });
+      const users = await User.find().select('-hashPassword');;
+      // console.log(users);
+      if(!users){
+        return res.json({message:"user not find"});
     }
-  };
 
-  // const getUserById = async (req, res) => {
-  //   try {
-  //     const {id} = req.params.id
-  //     const user = await User.findById(id);
-  //     if (!user) return res.status(404).json({ message: "User not found" });
-  //     res.status(200).send(user);
-  //   } catch (error) {
-  //     res.status(500).json({ message:"cant find user" });
-  //   }
-  // };
-
-  const getUserById = async (req, res) => {
-    try {
-      const id = req.params.id
-      const user = await User.findById(id);
-      if (!user) return res.status(404).json({ message: "User not found" });
-      res.status(200).json({user});
-    } catch (error) {
-      res.status(500).json({ message:"cant find user" });
+      res.status(200).json([users]);
+    } catch{
+      res.status(500).json({ message: "Unexpected error" });
     }
   };
 
@@ -121,7 +119,6 @@ const updateUser = async (req, res) => {
     updateUser,
     getAllUsers,
     getUserById
-
   }
 
   export default userControllers ;

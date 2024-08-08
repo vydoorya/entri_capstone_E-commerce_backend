@@ -3,7 +3,7 @@ import Order from "../models/orderModel.js";
 
 
 const ping = (req,res)=>{
-    res.json({message:"sucessfully routed order-router"});
+    res.send("sucessfully routed order-router");
   };
 // Create a new order
 const createOrder = async (req, res) => {
@@ -23,16 +23,16 @@ const createOrder = async (req, res) => {
 
     const newOrderCreated = await newOrder.save();
     // console.log(newOrderCreated);
-    
+
     if(!newOrderCreated){
       return res.json({message:"order not created"});
     }
     res.status(201).json(newOrderCreated)
-    // console.log("order created successfully");
-    
+    //console.log("order created successfully");
+
   } catch (error) {
-    // console.log("error",error.message);
-    
+    // console.log("error");
+
     res.status(400).json({ message: "internel server error" });
   }
 };
@@ -69,9 +69,9 @@ const getOrderById = async (req, res) => {
 // Update order
 const updateOrder = async (req, res) => {
     const { id } = req.params; 
-  
+
     const { products, totalAmount,shippingAddress } = req.body;
-  
+
     try {
       // console.log(id, products, totalAmount,  shippingAddress);
       const updatedOrder = await Order.findByIdAndUpdate(
@@ -79,17 +79,17 @@ const updateOrder = async (req, res) => {
         { products, totalAmount,shippingAddress},
         { new: true }
       );
-  
+
       if (!updatedOrder) {
         return res.status(404).json({ message: "Order not found" });
       }
-  
+
       res.status(200).json(updatedOrder);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   };
-  
+
 
 // Delete order
 const deleteOrder = async (req, res) => {
